@@ -24,17 +24,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Build
-        env:
-          # Repository secret or variable (the hash ships in the public bundle either way).
-          VITE_LEASEWISE_PASSWORD_HASH: ${{ secrets.VITE_LEASEWISE_PASSWORD_HASH || vars.VITE_LEASEWISE_PASSWORD_HASH }}
-        run: |
-          case "$VITE_LEASEWISE_PASSWORD_HASH" in
-            pbkdf2-sha256\$*) ;;
-            "") echo "::error::VITE_LEASEWISE_PASSWORD_HASH is empty. Add it under Settings > Secrets and variables > Actions > Repository secrets."; exit 1 ;;
-            *) echo "::error::VITE_LEASEWISE_PASSWORD_HASH must be only the value starting pbkdf2-sha256\$ (without the VITE_...= prefix)."; exit 1 ;;
-          esac
-          npm run build
+      - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
