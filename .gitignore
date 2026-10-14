@@ -1,0 +1,30 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+functions/node_modules
+functions/lib
+.firebase
+*.log
+*.tsbuildinfo
+
+# Local Firebase project binding and credentials
+.firebaserc
+.runtimeconfig.json
+*service-account*.json
+*-firebase-adminsdk-*.json
+*.pem
+*.key
+*.p12
+
+# Downloaded datasets (e.g. HM Land Registry Registered Leases / Price Paid CSVs)
+*.csv
+*.zip
+data/
+
+# Tooling and OS files
+coverage/
+.claude/settings.local.json
+.DS_Store
+Thumbs.db
