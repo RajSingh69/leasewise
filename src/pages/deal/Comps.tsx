@@ -32,17 +32,17 @@ export function CompsTab({ deal, a }: { deal: Deal; a: DealAnalysis }) {
   const [postcode, setPostcode] = useState(deal.postcode ?? '')
   const [radius, setRadius] = useState(deal.comps?.radiusM && deal.comps.radiusM <= 2000 ? Math.round(deal.comps.radiusM / 400) * 400 || 800 : 800)
   const [years, setYears] = useState(deal.comps?.yearsBack || 5)
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
   const v = a.values
   const items = (deal.comps?.items ?? []).map(migrateComparable)
 
   const run = async () => {
-    setBusy(true)
+    setBusy('Starting…')
     setErr(null)
     try {
-      const res = await fetchComparables({ postcode, street: streetFrom(deal.address), radiusM: radius, yearsBack: years })
+      const res = await fetchComparables({ postcode, street: streetFrom(deal.address), radiusM: radius, yearsBack: years }, setBusy)
       // Keep the user's own checks on sales already reviewed, and their manual sales.
       const prev = new Map(items.map((c) => [c.id, c]))
       res.items = res.items.map((c) => {
@@ -59,7 +59,7 @@ export function CompsTab({ deal, a }: { deal: Deal; a: DealAnalysis }) {
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
   const updateComp = (id: string, patch: Partial<Comparable>) =>
@@ -99,9 +99,10 @@ export function CompsTab({ deal, a }: { deal: Deal; a: DealAnalysis }) {
               ))}
             </select>
           </Field>
-          <Button onClick={run} disabled={busy || !postcode.trim()}>
+          <Button onClick={run} disabled={!!busy || !postcode.trim()}>
             {busy ? 'Searching…' : items.length ? 'Refresh evidence' : 'Find sold prices'}
           </Button>
+          {busy && <span className="text-sm text-muted">{busy}</span>}
         </div>
         {err && (
           <div className="mt-3">
@@ -159,8 +160,12 @@ export function CompsTab({ deal, a }: { deal: Deal; a: DealAnalysis }) {
             {PPD_ATTRIBUTION} Land Registry doesn’t record lease length: mark a sale “Long” only after checking it (e.g. the sold listing or title register). EPC data © Crown copyright.
           </p>
         </Card>
+      ) : deal.comps ? (
+        <Empty title="The search worked, but found no flat sales">
+          HM Land Registry has no completed flat or maisonette sales within {deal.comps.radiusM} m of {deal.comps.centrePostcode} in the last {deal.comps.yearsBack} years. Try a larger radius or a longer period above.
+        </Empty>
       ) : (
-        <Empty title="No comparable sales yet">Find sold prices for this postcode. Without them Leasewise can’t value the flat with a long lease or estimate the premium.</Empty>
+        <Empty title="No sold-price search yet">Enter the postcode above and press “Find sold prices”. Without them Leasewise can’t value the flat with a long lease or estimate the premium.</Empty>
       )}
       <ManualComp deal={deal} />
     </div>

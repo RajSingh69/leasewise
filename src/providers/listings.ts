@@ -23,19 +23,30 @@ export const LISTING_SOURCES: ListingSourceInfo[] = [
 
 const q = (s: string) => encodeURIComponent(s)
 
-export function portalSearchLinks(s: Pick<SavedSearch, 'location' | 'maxPrice' | 'minPrice' | 'maxLeaseYears' | 'includeAuctions' | 'minBedrooms'>) {
-  const lease = s.maxLeaseYears ? `"short lease" OR "${s.maxLeaseYears} years"` : '"short lease"'
-  const price = s.maxPrice ? ` under £${s.maxPrice.toLocaleString('en-GB')}` : ''
-  const beds = s.minBedrooms ? ` ${s.minBedrooms} bedroom` : ''
-  const terms = `${beds} flat ${lease} ${s.location}${price}`.trim()
+/**
+ * Links that open the portals' own search pages with the user's criteria. Results stay on
+ * the portal's website; Leasewise doesn't read them. Rightmove's location page format was
+ * checked against the live site (14 Oct 2026).
+ */
+export function portalSearchLinks(s: Pick<SavedSearch, 'location' | 'maxPrice' | 'minPrice' | 'maxLeaseYears' | 'includeAuctions' | 'minBedrooms' | 'radiusMiles'>) {
+  const loc = s.location.trim() || 'Woking'
+  const slug = loc.replace(/\s+/g, '-')
+  const rm = new URLSearchParams({ propertyTypes: 'flat', keywords: 'short lease', radius: String(s.radiusMiles ?? 3) })
+  if (s.maxPrice) rm.set('maxPrice', String(s.maxPrice))
+  if (s.minPrice) rm.set('minPrice', String(s.minPrice))
+  if (s.minBedrooms) rm.set('minBedrooms', String(s.minBedrooms))
+  const zp = new URLSearchParams({ keywords: 'short lease' })
+  if (s.maxPrice) zp.set('price_max', String(s.maxPrice))
+  if (s.minPrice) zp.set('price_min', String(s.minPrice))
+  if (s.minBedrooms) zp.set('beds_min', String(s.minBedrooms))
   const links = [
-    { label: 'Rightmove', url: `https://www.google.com/search?q=${q(`site:rightmove.co.uk/properties ${terms}`)}` },
-    { label: 'Zoopla', url: `https://www.google.com/search?q=${q(`site:zoopla.co.uk/for-sale/details ${terms}`)}` },
-    { label: 'OnTheMarket', url: `https://www.google.com/search?q=${q(`site:onthemarket.com/details ${terms}`)}` },
+    { label: 'Rightmove', url: `https://www.rightmove.co.uk/property-for-sale/${encodeURIComponent(slug)}.html?${rm}` },
+    { label: 'Zoopla', url: `https://www.zoopla.co.uk/for-sale/flats/${encodeURIComponent(slug.toLowerCase())}/?${zp}` },
+    { label: 'OnTheMarket (via Google)', url: `https://www.google.com/search?q=${q(`site:onthemarket.com "short lease" flat ${loc}`)}` },
   ]
   if (s.includeAuctions)
     links.push(
-      { label: 'Auctions (web)', url: `https://www.google.com/search?q=${q(`property auction lot flat leasehold ${s.location} short lease`)}` },
+      { label: 'Auction lots (via Google)', url: `https://www.google.com/search?q=${q(`auction lot leasehold flat "short lease" ${loc}`)}` },
       { label: 'Allsop', url: 'https://www.allsop.co.uk/' },
       { label: 'Auction House', url: 'https://www.auctionhouse.co.uk/' },
       { label: 'Clive Emson', url: 'https://www.cliveemson.co.uk/' },

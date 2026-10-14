@@ -26,6 +26,15 @@ export function DiscoverPage() {
         Bring listings in from the portals, alert emails or auction catalogues. Leasewise spots short leases, removes duplicates and tracks price changes. Then pick the ones worth researching.
       </PageHead>
 
+      <div className="rounded-xl border border-warn/30 bg-warn-soft px-4 py-3 text-sm text-[#6f4a0c]">
+        <b>No live listing feed is connected.</b> Leasewise can’t search Rightmove, Zoopla or OnTheMarket itself — they don’t offer open access and don’t allow automated collection. The inbox below shows <b>only listings you import</b>:
+        <ol className="mt-1 list-decimal pl-5">
+          <li>Search the portals with the buttons on the right (opens their websites), or set up their email alerts.</li>
+          <li>Paste a listing, a whole alert email, or a CSV export into “Bring listings in”.</li>
+          <li>Leasewise extracts the details, flags likely short leases, removes duplicates and records price changes.</li>
+        </ol>
+      </div>
+
       {events.length > 0 && (
         <Notice tone="info">
           <b>Latest import:</b> {events.filter((e) => e.kind === 'new').length} new, {events.filter((e) => e.kind === 'price-drop' || e.kind === 'resurfaced').length} price drops, {events.filter((e) => e.kind === 'seen-again').length} already known.
@@ -41,8 +50,8 @@ export function DiscoverPage() {
       )}
 
       <section>
-        <h2 className="mb-1 text-xl font-semibold">Inbox ({inbox.length})</h2>
-        <p className="mb-3 text-sm text-muted">New listings waiting for a decision. “Research it” starts the full valuation and cost analysis.</p>
+        <h2 className="mb-1 text-xl font-semibold">Imported listings ({inbox.length})</h2>
+        <p className="mb-3 text-sm text-muted">Listings you’ve brought in, waiting for a decision. “Research it” starts the sold-price valuation and cost analysis.</p>
         {inbox.length ? (
           <div className="grid gap-3 md:grid-cols-2">
             {inbox.map((d) => (
@@ -50,7 +59,7 @@ export function DiscoverPage() {
             ))}
           </div>
         ) : (
-          <Empty title="Inbox is empty">Paste a listing or a portal alert email below. Duplicates are merged and price changes are recorded automatically.</Empty>
+          <Empty title="Nothing imported yet">This isn’t an empty search result — no feed is connected. Paste a listing, an alert email or a CSV below to fill it.</Empty>
         )}
       </section>
 
@@ -373,7 +382,7 @@ function SearchPanel() {
             ))}
           </div>
         </div>
-        <div className="mt-4 text-xs font-medium text-muted">Search the portals with these criteria</div>
+        <div className="mt-4 text-xs font-medium text-muted">Open these searches on the portals’ own websites (new tab — results are not imported)</div>
         <div className="mt-1 flex flex-wrap gap-2">
           {links.map((l) => (
             <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer" className="rounded-lg bg-forest-soft px-3 py-1.5 text-sm font-medium text-forest no-underline hover:bg-[#d4e3da]">

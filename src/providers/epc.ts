@@ -7,6 +7,7 @@ import { cached, pool } from '../data/cache'
 import { matchAddress, type CandidateAddress } from '../domain/addressMatch'
 import type { Comparable, EpcMatch } from '../domain/types'
 
+import { providerFetch } from './http'
 const BASE = (import.meta.env.VITE_EPC_PROXY_URL as string | undefined) || '/api/epc'
 export const EPC_CERT_URL = (n: string) => `https://find-energy-certificate.service.gov.uk/energy-certificate/${n}`
 
@@ -22,8 +23,9 @@ async function authHeaders(): Promise<Record<string, string>> {
 }
 
 async function get<T>(path: string): Promise<T | null> {
-  const res = await fetch(`${BASE}${path}`, { headers: { Accept: 'application/json', ...(await authHeaders()) } })
-  if (res.status === 404) return null
+  const res = await providerFetch('EPC register', `${BASE}${path}`, { headers: { Accept: 'application/json', ...(await authHeaders()) } }, 20_000)
+  // On static hosting (GitHub Pages) there is no proxy: the path returns an HTML 404 page.
+  if (res.status === 404 || !(res.headers.get('content-type') ?? '').includes('json')) return null
   if (!res.ok) throw new Error(`EPC register error (${res.status})`)
   return res.json()
 }

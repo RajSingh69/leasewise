@@ -5,6 +5,7 @@ import { cached } from '../data/cache'
 import { smoothIndex } from '../domain/comparables'
 import type { HpiInfo } from '../domain/types'
 
+import { providerFetch } from './http'
 const ENDPOINT = 'https://landregistry.data.gov.uk/landregistry/query'
 
 export const regionSlug = (name: string) =>
@@ -23,11 +24,11 @@ SELECT ?month ?flat ?all WHERE {
   OPTIONAL { ?r ukhpi:housePriceIndex ?all }
   FILTER (STR(?month) >= "${since}")
 } ORDER BY ?month`
-  const res = await fetch(ENDPOINT, {
+  const res = await providerFetch('UK House Price Index', ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/sparql-results+json' },
     body: new URLSearchParams({ query }),
-  })
+  }, 30_000)
   if (!res.ok) throw new Error(`UK HPI query failed (${res.status})`)
   const rows: Record<string, { value: string } | undefined>[] = (await res.json()).results?.bindings ?? []
   const flat: Record<string, number> = {}

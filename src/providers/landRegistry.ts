@@ -12,6 +12,7 @@ import { enrichWithLeases } from './leases'
 import { cached, pool } from '../data/cache'
 import { scoreComparable } from '../domain/comparables'
 
+import { providerFetch } from './http'
 const ENDPOINT = 'https://landregistry.data.gov.uk/landregistry/query'
 export const PPD_ATTRIBUTION = 'Contains HM Land Registry data © Crown copyright and database right. Open Government Licence v3.0.'
 
@@ -34,12 +35,12 @@ SELECT ?tx ?paon ?saon ?street ?postcode ?amount ?date ?ptype ?estate ?newbuild 
   FILTER (?date >= "${since}"^^xsd:date)
   FILTER (!BOUND(?cat) || ?cat = lrppi:standardPricePaidTransaction)
 } ORDER BY DESC(?date) LIMIT 300`
-  const res = await fetch(ENDPOINT, {
+  const res = await providerFetch('HM Land Registry', ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/sparql-results+json' },
     body: new URLSearchParams({ query }),
-  })
-  if (!res.ok) throw new Error(`Land Registry query failed (${res.status}). Try again later.`)
+  }, 45_000)
+  if (!res.ok) throw new Error(`HM Land Registry rejected the search (HTTP ${res.status}). Try again later.`)
   return (await res.json()).results?.bindings ?? []
 }
 
@@ -78,10 +79,12 @@ export function parsePpd(bindings: Binding[], ctx: { dist: Map<string, number>; 
 const MAX_STORED = 150
 const PPD_CHUNK = 250
 
-export async function fetchComparables(opts: { postcode: string; street?: string; radiusM: number; yearsBack: number }): Promise<CompsResult> {
+export async function fetchComparables(opts: { postcode: string; street?: string; radiusM: number; yearsBack: number }, onStage?: (s: string) => void): Promise<CompsResult> {
   const sources: SourceStatus[] = []
+  onStage?.('Looking up the postcode…')
   const centre = await cached(`pc:${opts.postcode.toUpperCase().replace(/\s/g, '')}`, 24 * 30, () => lookupPostcode(opts.postcode))
   if (!centre) throw new Error(`Postcode ${opts.postcode} not recognised.`)
+  onStage?.(`Finding every postcode within ${opts.radiusM} m…`)
   const cover = await coverRadius(centre, opts.radiusM, (lat, lon, r) =>
     cached(`near:${lat.toFixed(5)},${lon.toFixed(5)}:${r}`, 24 * 30, () => nearbyPostcodes(lat, lon, r)),
   )
@@ -96,6 +99,7 @@ export async function fetchComparables(opts: { postcode: string; street?: string
   const pcs = [...dist.entries()].sort((a, b) => a[1] - b[1]).map(([p]) => p)
   const chunks: string[][] = []
   for (let i = 0; i < pcs.length; i += PPD_CHUNK) chunks.push(pcs.slice(i, i + PPD_CHUNK))
+  onStage?.(`Searching HM Land Registry sold prices for ${dist.size} postcodes…`)
   const bindings = (await pool(chunks, 2, (c) => cached(`ppd:${c[0]}:${c.length}:${c[c.length - 1]}:${sinceIso}`, 24, () => queryPpd(c, sinceIso)))).flat()
   let items = parsePpd(bindings, { dist, centrePostcode: centre.postcode, street: opts.street })
   const total = items.length
@@ -105,12 +109,14 @@ export async function fetchComparables(opts: { postcode: string; street?: string
 
   let hpi: HpiInfo | undefined
   try {
+    onStage?.('Getting the UK House Price Index…')
     hpi = await fetchHpi(centre.district, sinceIso.slice(0, 7))
     sources.push({ id: 'ukhpi', ok: true, message: `UK HPI: ${hpi.region} ${hpi.series === 'flat-maisonette' ? 'flats' : 'all property'}, to ${hpi.latestMonth}` })
   } catch (e) {
     sources.push({ id: 'ukhpi', ok: false, message: `UK HPI unavailable (${e instanceof Error ? e.message : e}); prices not time-adjusted.` })
   }
 
+  onStage?.('Checking floor areas and lease data…')
   if (await epcAvailable()) {
     try {
       const r = await enrichWithEpc(items)

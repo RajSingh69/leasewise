@@ -1,4 +1,5 @@
 // postcodes.io — free, open UK postcode data (Ordnance Survey / ONS). No key required.
+import { providerFetch } from './http'
 const BASE = 'https://api.postcodes.io'
 
 export interface PostcodeInfo {
@@ -21,7 +22,7 @@ interface ApiPostcode {
 const toInfo = (r: ApiPostcode): PostcodeInfo => ({ postcode: r.postcode, latitude: r.latitude, longitude: r.longitude, district: r.admin_district, ward: r.admin_ward })
 
 export async function lookupPostcode(pc: string): Promise<PostcodeInfo | null> {
-  const res = await fetch(`${BASE}/postcodes/${encodeURIComponent(pc.trim())}`)
+  const res = await providerFetch('postcodes.io', `${BASE}/postcodes/${encodeURIComponent(pc.trim())}`, {}, 15_000)
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`Postcode lookup failed (${res.status})`)
   const j = await res.json()
@@ -31,7 +32,7 @@ export async function lookupPostcode(pc: string): Promise<PostcodeInfo | null> {
 /** Nearby postcodes. postcodes.io caps radius at 2,000 m and results at 100. */
 export async function nearbyPostcodes(lat: number, lon: number, radiusM: number): Promise<(PostcodeInfo & { distance: number })[]> {
   const r = Math.min(2000, Math.max(100, radiusM))
-  const res = await fetch(`${BASE}/postcodes?lat=${lat}&lon=${lon}&radius=${r}&limit=100`)
+  const res = await providerFetch('postcodes.io', `${BASE}/postcodes?lat=${lat}&lon=${lon}&radius=${r}&limit=100`, {}, 15_000)
   if (!res.ok) throw new Error(`Nearby postcode search failed (${res.status})`)
   const j = await res.json()
   return ((j.result ?? []) as ApiPostcode[]).map((x) => ({ ...toInfo(x), distance: x.distance ?? 0 }))

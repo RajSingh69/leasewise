@@ -40,3 +40,17 @@ describe.skipIf(!LIVE)('live public data', () => {
     console.log(r.sources?.map((s) => s.message).join('\n'), '\n', v.confidence, v.low, v.base, v.high, v.selectedCount)
   }, 90_000)
 })
+
+describe('provider errors are never silent', () => {
+  it('names the provider on network failure and timeout', async () => {
+    const { providerFetch } = await import('./http')
+    const real = globalThis.fetch
+    globalThis.fetch = (() => Promise.reject(new TypeError('Failed to fetch'))) as typeof fetch
+    await expect(providerFetch('HM Land Registry', 'https://landregistry.data.gov.uk/x')).rejects.toThrow(/HM Land Registry could not be reached/)
+    globalThis.fetch = ((_u: string, init: RequestInit) => new Promise((_r, rej) => init.signal!.addEventListener('abort', () => rej(new DOMException('a', 'AbortError'))))) as unknown as typeof fetch
+    await expect(providerFetch('postcodes.io', 'https://api.postcodes.io/x', {}, 10)).rejects.toThrow(/did not respond/)
+    globalThis.fetch = (() => Promise.resolve(new Response('', { status: 503 }))) as typeof fetch
+    await expect(providerFetch('UK House Price Index', 'https://x.test/')).rejects.toThrow(/having problems/)
+    globalThis.fetch = real
+  })
+})
