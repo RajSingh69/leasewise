@@ -21,7 +21,7 @@ functions/lib
 # Downloaded datasets (e.g. HM Land Registry Registered Leases / Price Paid CSVs)
 *.csv
 *.zip
-data/
+/data/
 
 # Tooling and OS files
 coverage/

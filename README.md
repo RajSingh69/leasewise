@@ -15,6 +15,17 @@ npm run build      # type-check + production build to dist/
 
 With no Firebase variables set, the app runs in **local mode**: data stays in this browser (`localStorage` key `leasewise-v2`). Use Settings → Export backup regularly. Settings → Import backup also accepts the v1 prototype's `leasewise-backup.json`.
 
+## Login and GitHub Pages
+
+The app opens behind a login screen (username `LeasewiseAdmin`). The session lasts until the browser tab or window is closed (`sessionStorage`); **Log out** is in the header (footer on mobile).
+
+1. `npm run hash-password` and type the password at the hidden prompt. It prints `VITE_LEASEWISE_PASSWORD_HASH=...`.
+2. Local: put that line in `.env.local` (git-ignored) and restart `npm run dev`.
+3. Deploy: GitHub → Settings → Secrets and variables → Actions → new repository secret `VITE_LEASEWISE_PASSWORD_HASH` with the hash value. Settings → Pages → Source: **GitHub Actions**. Every push to `main` builds and deploys (`.github/workflows/deploy.yml`).
+4. To change the password, generate a new hash and replace the secret, then re-run the workflow.
+
+This is a client-side gate: it hides the app from casual visitors but isn't server-side security. The built site contains only the salted hash, so use a long passphrase. Deal data never goes to GitHub; it stays in each browser's `localStorage`. The EPC floor-area proxy needs a server, so it's unavailable on GitHub Pages.
+
 ## What works
 
 | Area | What it does | Data source |

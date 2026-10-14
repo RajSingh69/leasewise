@@ -3,6 +3,7 @@ import { store, useDb } from './data/store'
 import { LocalRepository } from './data/repository'
 import { allowedEmails, firebaseConfigured, type AuthUser } from './data/firebase'
 import { Button, go, useRoute } from './ui/kit'
+import { logout } from './ui/LoginGate'
 import { HomePage } from './pages/Home'
 import { DiscoverPage } from './pages/Discover'
 import { DealsPage } from './pages/Deals'
@@ -71,7 +72,7 @@ export function App() {
 function Wordmark({ compact }: { compact?: boolean }) {
   return (
     <a href="#/" className="inline-flex shrink-0 items-center gap-2 text-ink no-underline" aria-label="Leasewise home">
-      <img src="/favicon.svg" alt="" className="h-7 w-7" />
+      <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-7 w-7" />
       <span className={`font-display text-xl font-semibold ${compact ? 'hidden sm:inline' : ''}`}>Leasewise</span>
     </a>
   )
@@ -131,6 +132,9 @@ function Shell() {
             <a href="#/settings" className={`rounded-lg px-3 py-1.5 text-sm no-underline ${active === 'settings' ? 'bg-white text-ink' : 'text-muted hover:text-ink'}`}>
               Settings
             </a>
+            <button onClick={logout} className="rounded-lg px-3 py-1.5 text-sm text-muted hover:text-ink">
+              Log out
+            </button>
           </div>
         </div>
       </header>
@@ -142,6 +146,7 @@ function Shell() {
         <div className="flex flex-wrap gap-x-4 gap-y-2">
           <a href="#/professionals" className="sm:hidden">Professionals</a>
           <a href="#/settings" className="sm:hidden">Settings</a>
+          <button onClick={logout} className="underline sm:hidden">Log out</button>
           <span>Leasewise gives research estimates, not financial, legal or valuation advice. Verify everything with qualified professionals.</span>
           <span>{store.repo?.kind === 'local' ? 'Local mode: data is stored only in this browser.' : 'Synced to your private cloud workspace.'}</span>
           <button className="underline" onClick={() => go('settings')}>Back up data</button>

@@ -40,9 +40,11 @@ function epcProxy(token: string | undefined): Plugin {
   }
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode, isPreview }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
+    // Production builds are served from GitHub Pages at /leasewise/.
+    base: command === 'build' || isPreview ? '/leasewise/' : '/',
     plugins: [react(), tailwindcss(), epcProxy(env.EPC_API_TOKEN)],
     test: { environment: 'node', include: ['src/**/*.test.ts'] },
   } as never
