@@ -54,3 +54,17 @@ describe('provider errors are never silent', () => {
     globalThis.fetch = real
   })
 })
+
+describe('PropertyData live listings mapping', () => {
+  it('maps the documented response shape without images and with status, date and source', async () => {
+    const { mapPdProperty } = await import('./propertyData')
+    // Shape taken from PropertyData's published example response.
+    const p = { id: 'R168299921', address: 'Stile Road, Headington Oxford, OX3', precise_address: '9, STILE ROAD, OXFORD, OXFORDSHIRE, OX3 8AG', postcode: 'OX3 8AG', type: 'Semi-detached', type_standardised: 'Semi-detached house', bedrooms: 3, price: 600000, sqf: 1290, days_on_market: 131, sstc: 0, distance_to: '0.37', price_history: [{ date: '2024-09-12', price: 625000 }, { date: '2025-01-08', price: 600000 }], url: 'https://propertydata.co.uk/outbound/rightmove/168299921', image_url: 'x', lists: ['short-lease-properties'], years_remaining: 64 }
+    const l = mapPdProperty(p, '2026-10-14T12:00:00Z', { 'short-lease-properties': 'Short lease' })
+    expect(l.record).toMatchObject({ provider: 'rightmove', ref: 'R168299921', price: 600000, postcode: 'OX3 8AG', leaseYears: 64, floorAreaSqm: 120, listingDate: '2026-06-05', priceReducedHint: true })
+    expect(l.active).toBe('for-sale')
+    expect(l.type).toBe('Semi-detached house')
+    expect(l.lists).toEqual(['Short lease'])
+    expect(JSON.stringify(l)).not.toContain('image')
+  })
+})

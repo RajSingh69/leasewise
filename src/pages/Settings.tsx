@@ -7,6 +7,8 @@ import { normalisePostcode } from '../domain/listing'
 import type { BuyerCircumstances } from '../domain/types'
 import { Button, Card, Field, Notice, NumberInput, PageHead, download } from '../ui/kit'
 import { LeaseImportCard } from '../ui/LeaseRegister'
+import { getPropertyDataKey, setPropertyDataKey, PROPERTYDATA_SIGNUP } from '../providers/propertyData'
+import { Ext } from '../ui/kit'
 
 export function SettingsPage() {
   const db = useDb()
@@ -103,6 +105,13 @@ export function SettingsPage() {
               Sign out
             </Button>
           )}
+        </Card>
+        <Card>
+          <h2 className="text-xl font-semibold">Live listings (PropertyData)</h2>
+          <p className="mt-1 text-sm text-muted">
+            Paste your PropertyData API key to search properties currently for sale from Discover. It’s stored only in this browser, never in the code or on GitHub. Plans from £30/month; free 14-day trial for testing (<Ext href={PROPERTYDATA_SIGNUP}>pricing</Ext>). Each search uses about 10–20 credits.
+          </p>
+          <input className="mt-3" type="password" autoComplete="off" defaultValue={getPropertyDataKey()} placeholder="API key" onBlur={(e) => setPropertyDataKey(e.target.value)} />
         </Card>
         <LeaseImportCard />
       </div>

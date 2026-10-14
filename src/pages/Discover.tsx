@@ -7,6 +7,8 @@ import { findDuplicate, identifyListing, normalisePostcode, parseListingText } f
 import type { Deal, SavedSearch } from '../domain/types'
 import { CSV_COLUMNS, LISTING_SOURCES, parseCsv, portalSearchLinks } from '../providers/listings'
 import { Button, Card, Empty, Field, Notice, NumberInput, PageHead, Tabs, go } from '../ui/kit'
+import { LiveSearchPanel } from '../ui/LiveSearch'
+import { getPropertyDataKey } from '../providers/propertyData'
 
 const SIGNAL: Record<SignalLevel, [string, string]> = {
   likely: ['Likely short lease', 'bg-brass-soft text-brass'],
@@ -26,14 +28,17 @@ export function DiscoverPage() {
         Bring listings in from the portals, alert emails or auction catalogues. Leasewise spots short leases, removes duplicates and tracks price changes. Then pick the ones worth researching.
       </PageHead>
 
-      <div className="rounded-xl border border-warn/30 bg-warn-soft px-4 py-3 text-sm text-[#6f4a0c]">
+      <LiveSearchPanel />
+
+      <h2 className="pt-2 text-2xl font-semibold">Your imported listings</h2>
+      {!getPropertyDataKey() && <div className="rounded-xl border border-warn/30 bg-warn-soft px-4 py-3 text-sm text-[#6f4a0c]">
         <b>No live listing feed is connected.</b> Leasewise can’t search Rightmove, Zoopla or OnTheMarket itself — they don’t offer open access and don’t allow automated collection. The inbox below shows <b>only listings you import</b>:
         <ol className="mt-1 list-decimal pl-5">
           <li>Search the portals with the buttons on the right (opens their websites), or set up their email alerts.</li>
           <li>Paste a listing, a whole alert email, or a CSV export into “Bring listings in”.</li>
           <li>Leasewise extracts the details, flags likely short leases, removes duplicates and records price changes.</li>
         </ol>
-      </div>
+      </div>}
 
       {events.length > 0 && (
         <Notice tone="info">
